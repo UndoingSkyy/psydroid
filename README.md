@@ -6,7 +6,7 @@ Run Android apps and browse the web on Windows. PsyDroid is a native desktop app
 
 ## Get started
 
-1. Download `PsyDroid-0.1.0-windows-x64.zip` from the [latest release](https://github.com/UndoingSkyy/psydroid/releases/latest), extract it anywhere, and open `PsyDroid\PsyDroid.exe`. Keep the `_internal` folder beside it. The app isn't code-signed, so Windows may show a SmartScreen warning: choose **More info**, then **Run anyway**.
+1. Download the `PsyDroid-<version>-windows-x64.zip` file from the [latest release](https://github.com/UndoingSkyy/psydroid/releases/latest), extract it anywhere, and open `PsyDroid\PsyDroid.exe`. Keep the `_internal` folder beside it. The app isn't code-signed, so Windows may show a SmartScreen warning: choose **More info**, then **Run anyway**.
 2. Choose **Download and install**. PsyDroid fetches Google's emulator, adb and the Android 16 image (about 1.9 GB, once) and shows the Android SDK License first.
 3. Press **Start Android**. Sign in to Google Play inside Android, or drop APK files onto the screen.
 
@@ -18,13 +18,13 @@ You need Windows 10 or 11 (64-bit), Windows Hypervisor Platform turned on, curre
 - **Ad-free web**: one click installs Firefox with uBlock Origin inside Android. **Block ads** filters ad networks inside apps through AdGuard DNS.
 - **Apps**: install `.apk`, `.apks` and `.xapk` files by dropping them on the screen, see what's installed, uninstall, or put a shortcut to an app on your desktop.
 - **Everyday tools**: screenshots, screen recording, a clipboard shared with Windows, file import and export, Ctrl+scroll to zoom, rotate, volume, GPS location and your webcam as Android's camera.
-- **Sensible defaults**: a 720 x 1280 display, 3 GB of memory on an 8 GB PC, up to 4 CPU cores and automatic GPU selection. Light, Balanced and High detail choices in each instance's Settings, and presets you can save for new instances.
+- **Sensible defaults**: a 720 x 1280 display, 3 GB of memory on an 8 GB PC, up to 4 CPU cores and your graphics card for drawing. Light, Balanced and High detail choices in each instance's Settings, and presets you can save for new instances.
 - **Stays out of the way**: keep running in the tray, start with Windows, a shortcut that hides every window, mute, and stay on top.
 - **Careful with your data**: downloads are checksum-verified and resume safely, archives are unpacked in a staging folder, settings are written atomically, and a stalled first boot is stopped without erasing anything.
 
 Everything PsyDroid stores lives in `%LOCALAPPDATA%\PsyDroid`, and it can be moved to another drive from All instances.
 
-To check the download, compare `Get-FileHash PsyDroid-0.1.0-windows-x64.zip` in PowerShell with `SHA256SUMS.txt` from the same release.
+To check the download, compare `Get-FileHash` of the ZIP in PowerShell with `SHA256SUMS.txt` from the same release.
 
 ## Build
 
@@ -49,7 +49,7 @@ Set `PSYDROID_HOME` to a test folder to keep development data separate from your
 
 - Crash details: `%LOCALAPPDATA%\PsyDroid\data\crash.log`
 - Device logs: `%LOCALAPPDATA%\PsyDroid\data\logs`, also reachable from a stopped device's screen
-- If Android crashes while starting, set Graphics to Automatic, then Software, in the instance's Settings.
+- If Android crashes while starting, set Graphics to Software in the instance's Settings. It is much slower, so switch back to Graphics card once your graphics driver is updated.
 - Deleting an instance's folder erases its apps and data, so avoid it as a troubleshooting step.
 
 ## License

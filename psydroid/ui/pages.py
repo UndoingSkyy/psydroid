@@ -291,7 +291,7 @@ class SettingsPage(Page):
         def apply_preset(cores, ram, width, height, density):
             host.set_hardware(controller, cores=min(cores, system.host_cores()),
                               ram=min(ram, max(2048, system.host_memory() - 4096)),
-                              width=width, height=height, density=density, gpu="auto")
+                              width=width, height=height, density=density)
             host.refresh_settings()
             host.toast("Saved. It applies the next time Android starts.", "good")
 
@@ -332,8 +332,8 @@ class SettingsPage(Page):
                       setting("Processor", "More cores help heavier apps.", cores), divider(),
                       setting("Memory", "3 GB suits most apps.", memory), divider(),
                       setting("Display", "Phone suits most apps. Tablet runs in landscape.", display), divider(),
-                      setting("Graphics", "Your graphics card is fastest. If Android crashes while starting, try "
-                                          "Automatic, then Software.", graphics), divider(),
+                      setting("Graphics", "Your graphics card keeps the screen smooth. If Android crashes while "
+                                          "starting, try Software, which is much slower.", graphics), divider(),
                       setting("Storage", "Room for apps and their data. Changing it erases this instance's apps "
                                          "and data.", disk), *restart))
 

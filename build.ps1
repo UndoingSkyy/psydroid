@@ -29,7 +29,7 @@ if ($Installer) {
         "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe") |
         Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
     if (-not $psydroidInno) { throw 'Portable build succeeded. Inno Setup 6 is required only for -Installer.' }
-    & $psydroidInno /Qp '/DAppVersion=0.1.0' setup.iss
+    & $psydroidInno /Qp '/DAppVersion=0.1.1' setup.iss
     if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
 }
-Write-Host 'Ready: dist\PsyDroid\PsyDroid.exe and dist\PsyDroid-0.1.0-windows-x64.zip'
+Write-Host 'Ready: dist\PsyDroid\PsyDroid.exe and dist\PsyDroid-0.1.1-windows-x64.zip'

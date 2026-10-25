@@ -30,10 +30,17 @@ def environment():
     }
 
 
+def working_folder():
+    # adb's server outlives PsyDroid and keeps its starting folder open, which would stop anyone deleting or
+    # replacing the folder PsyDroid was opened from, so tools start in the SDK folder instead
+    return str(paths.SDK) if paths.SDK.is_dir() else None
+
+
 def run(args, timeout=30):
     try:
         result = subprocess.run(args, capture_output=True, text=True, timeout=timeout, env=environment(),
-                                creationflags=subprocess.CREATE_NO_WINDOW, encoding="utf-8", errors="replace")
+                                cwd=working_folder(), creationflags=subprocess.CREATE_NO_WINDOW, encoding="utf-8",
+                                errors="replace")
     except subprocess.TimeoutExpired:
         return -1, f"No answer after {timeout} seconds"
     return result.returncode, (result.stdout + result.stderr).strip()
@@ -84,8 +91,8 @@ class Emulator:
         self.started = time.monotonic()
         paths.LOGS.mkdir(parents=True, exist_ok=True)
         with open(self.instance.log, "w") as log, without_crash_dialogs():
-            self.process = subprocess.Popen(args, env=environment(), stdout=log, stderr=subprocess.STDOUT,
-                                            creationflags=subprocess.CREATE_NO_WINDOW)
+            self.process = subprocess.Popen(args, env=environment(), cwd=working_folder(), stdout=log,
+                                            stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
 
     def running(self):
         if self.process and self.process.poll() is None:

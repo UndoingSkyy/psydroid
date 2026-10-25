@@ -3,7 +3,7 @@ import threading
 import time
 
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QImage, QPainter, QPainterPath
+from PySide6.QtGui import QColor, QImage, QPainter, QRegion
 from PySide6.QtWidgets import QWidget
 
 from ..bridge import KEYDOWN, KEYUP
@@ -180,19 +180,16 @@ class PhoneView(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        painter.fillRect(self.rect(), QColor(COLORS["main"]))
         if not self.image:
+            painter.fillRect(self.rect(), QColor(COLORS["main"]))
             return
         rect = self.frame_rect()
-        clip = QPainterPath()
-        clip.addRoundedRect(rect, 6, 6)
-        painter.save()
-        painter.setClipPath(clip)
+        # Only the bands around the frame need the background; the frame covers the rest every time
+        for band in QRegion(self.rect()).subtracted(QRegion(rect.toAlignedRect())):
+            painter.fillRect(band, QColor(COLORS["main"]))
         painter.drawImage(rect, self.image)
-        painter.restore()
         if self.controller and self.controller.recording_video:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(COLORS["red"]))
             painter.drawEllipse(QPointF(rect.right() - 18, rect.top() + 18), 6, 6)

@@ -13,9 +13,10 @@ from . import installer, paths, storage
 CONSOLE_PORTS = [5580, 5582, 5584, 5578, 5576, 5574, 5572, 5570, 5568, 5566, 5564, 5562, 5560, 5558, 5556, 5554]
 GRPC_BASE = 8554
 DISK_SIZES = (16, 32, 64, 128)
-# What the emulator's -gpu option takes. Hardware is the fast one, the others are there for GPUs that crash it
-GPU_MODES = {"host": "Graphics card", "auto": "Automatic", "swangle": "Software (slow)"}
-DEFAULT_GPU = "auto"
+# What the emulator's -gpu option takes. PsyDroid runs the emulator without a window of its own, and there "auto"
+# always picks SwiftShader, drawing Android on the processor. Instances saved with it fall back to the graphics card.
+GPU_MODES = {"host": "Graphics card", "swangle": "Software (slow)"}
+DEFAULT_GPU = "host"
 BACKUP_SKIPS = {"snapshots", "hardware-qemu.ini.lock", "multiinstance.lock", "hardware-qemu.ini",
                 "emu-launch-params.txt"}
 CHUNK = 1 << 22
