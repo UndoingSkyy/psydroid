@@ -1,0 +1,137 @@
+import ctypes
+import os
+import subprocess
+import sys
+import winreg
+from ctypes import wintypes
+from pathlib import Path
+
+from . import paths
+
+RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+RUN_NAME = "PsyDroid"
+RESERVED_MEMORY = 4096
+
+
+class MemoryStatus(ctypes.Structure):
+    _fields_ = [("length", wintypes.DWORD), ("load", wintypes.DWORD), ("total", ctypes.c_ulonglong),
+                ("free", ctypes.c_ulonglong), ("page_total", ctypes.c_ulonglong), ("page_free", ctypes.c_ulonglong),
+                ("virtual_total", ctypes.c_ulonglong), ("virtual_free", ctypes.c_ulonglong),
+                ("extended", ctypes.c_ulonglong)]
+
+
+def host_cores():
+    return os.cpu_count() or 4
+
+
+def host_memory():
+    status = MemoryStatus()
+    status.length = ctypes.sizeof(status)
+    ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status))
+    return status.total // (1 << 20)
+
+
+def suggested_hardware():
+    # Bound the default allocation even on big hosts. More can be chosen in Settings.
+    cores = max(1, min(4, host_cores() // 2))
+    memory = host_memory()
+    ram = 3072 if memory >= 8192 else 2048
+    return cores, ram
+
+
+def core_options(current):
+    options = {count for count in (1, 2, 3, 4, 6, 8, 10, 12, 16, 24, 32) if count <= host_cores()}
+    return sorted(options | {current})
+
+
+def memory_options(current):
+    limit = max(host_memory() - RESERVED_MEMORY, 2048)
+    options = {size for size in (2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768) if size <= limit}
+    return sorted(options | {current})
+
+
+def launcher():
+    # What starts PsyDroid: its exe once installed, or pythonw and the script when run from source
+    if getattr(sys, "frozen", False):
+        return sys.executable, ""
+    python = Path(sys.executable).with_name("pythonw.exe")
+    script = paths.BUNDLE / "PsyDroid.pyw"
+    return str(python if python.exists() else sys.executable), f'"{script}"'
+
+
+def command(*arguments):
+    target, prefix = launcher()
+    return " ".join([f'"{target}"', *([prefix] if prefix else []), *arguments])
+
+
+def starts_with_windows():
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as key:
+            winreg.QueryValueEx(key, RUN_NAME)
+        return True
+    except OSError:
+        return False
+
+
+def start_with_windows(enabled):
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as key:
+        if enabled:
+            winreg.SetValueEx(key, RUN_NAME, 0, winreg.REG_SZ, command("--background"))
+        else:
+            try:
+                winreg.DeleteValue(key, RUN_NAME)
+            except FileNotFoundError:
+                pass
+
+
+def shortcut(file, arguments, description):
+    target, prefix = launcher()
+    script = ("$link = (New-Object -ComObject WScript.Shell).CreateShortcut($env:SHORTCUT_FILE); "
+              "$link.TargetPath = $env:SHORTCUT_TARGET; $link.Arguments = $env:SHORTCUT_ARGUMENTS; "
+              "$link.Description = $env:SHORTCUT_TEXT; $link.IconLocation = $env:SHORTCUT_ICON; "
+              "$link.WorkingDirectory = $env:SHORTCUT_FOLDER; $link.Save()")
+    # Passed as environment variables so that no quoting can break a path or a game's name
+    settings = {"SHORTCUT_FILE": str(file), "SHORTCUT_TARGET": target,
+                "SHORTCUT_ARGUMENTS": " ".join([prefix, *arguments]).strip(), "SHORTCUT_TEXT": description,
+                "SHORTCUT_ICON": str(paths.ICON), "SHORTCUT_FOLDER": str(Path(target).parent)}
+    result = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], capture_output=True,
+                            text=True, env={**os.environ, **settings}, creationflags=subprocess.CREATE_NO_WINDOW)
+    if result.returncode:
+        raise OSError(result.stderr.strip() or "Windows couldn't create the shortcut")
+
+
+def after_exit(script, settings):
+    """Runs PowerShell commands once this process has ended, so they never meet its single-instance lock.
+
+    DETACHED_PROCESS would stop PowerShell from starting at all, and the helper doesn't need it to outlive us."""
+    subprocess.Popen(["powershell", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command",
+                      "Wait-Process -Id $env:PSYDROID_WAIT_FOR -ErrorAction SilentlyContinue; " + script],
+                     env={**os.environ, "PSYDROID_WAIT_FOR": str(os.getpid()), **settings}, close_fds=True,
+                     creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
+
+
+START_AGAIN = ("if ($env:RELAUNCH_ARGUMENTS) "
+               "{ Start-Process -FilePath $env:RELAUNCH_TARGET -ArgumentList $env:RELAUNCH_ARGUMENTS } "
+               "else { Start-Process -FilePath $env:RELAUNCH_TARGET }")
+
+
+def restart(relaunch=None):
+    target, prefix = relaunch or launcher()
+    after_exit(START_AGAIN, {"RELAUNCH_TARGET": target, "RELAUNCH_ARGUMENTS": prefix})
+
+
+def can_update():
+    # Only the installed app updates itself. A copy run from source is updated with git
+    return bool(getattr(sys, "frozen", False))
+
+
+def install_update(installer, relaunch=None):
+    """Once this copy has quit, runs the new installer and starts PsyDroid again.
+
+    Windows asks permission when PsyDroid is in Program Files. If that's refused, or the install fails, the
+    copy that was already there starts again, and the update is offered next time."""
+    target, prefix = relaunch or launcher()
+    install = ("Start-Process -FilePath $env:UPDATE_INSTALLER -ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART' "
+               "-Wait -ErrorAction SilentlyContinue; ")
+    after_exit(install + START_AGAIN, {"UPDATE_INSTALLER": str(installer), "RELAUNCH_TARGET": target,
+                                       "RELAUNCH_ARGUMENTS": prefix})

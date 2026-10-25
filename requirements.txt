@@ -1,0 +1,3 @@
+PySide6-Essentials==6.11.2
+grpcio==1.84.0
+protobuf==7.36.2
