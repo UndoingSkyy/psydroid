@@ -6,7 +6,7 @@ Run Android apps and browse the web on Windows. PsyDroid is a native desktop app
 
 ## Get started
 
-1. Build PsyDroid (below), then open `dist\PsyDroid\PsyDroid.exe`. Keep the `_internal` folder beside it.
+1. Download `PsyDroid-0.1.0-windows-x64.zip` from the [latest release](https://github.com/UndoingSkyy/psydroid/releases/latest), extract it anywhere, and open `PsyDroid\PsyDroid.exe`. Keep the `_internal` folder beside it. The app isn't code-signed, so Windows may show a SmartScreen warning: choose **More info**, then **Run anyway**.
 2. Choose **Download and install**. PsyDroid fetches Google's emulator, adb and the Android 16 image (about 1.9 GB, once) and shows the Android SDK License first.
 3. Press **Start Android**. Sign in to Google Play inside Android, or drop APK files onto the screen.
 
@@ -24,9 +24,11 @@ You need Windows 10 or 11 (64-bit), Windows Hypervisor Platform turned on, curre
 
 Everything PsyDroid stores lives in `%LOCALAPPDATA%\PsyDroid`, and it can be moved to another drive from All instances.
 
+To check the download, compare `Get-FileHash PsyDroid-0.1.0-windows-x64.zip` in PowerShell with `SHA256SUMS.txt` from the same release.
+
 ## Build
 
-Requires Python 3.13 or 3.14 (64-bit) and Git. Dependencies are pinned.
+To build it yourself instead, you need Python 3.13 or 3.14 (64-bit) and Git. Dependencies are pinned.
 
 ```powershell
 .\build.ps1
